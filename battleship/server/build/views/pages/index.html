@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Battleship</title>
+  <script src="/socketfile"></script>
+  <style>
+    #messages {
+      max-height: 250px;
+      overflow-y: scroll;
+    }
+  </style>
+</head>
+<body>
+  Welcome to Battleship
+  <div id="playas">
+    Play as:
+    <button id="red">red</button>
+    <button id="blue">blue</button>
+  </div>
+  <div>
+    Chat
+  </div>
+  <ul id="messages"></ul>
+  <form id="form" action="">
+    <input id="input" autocomplete="off"/>
+    <button id="send" disabled>Send</button>
+  </form>
+</body>
+<script>
+  var socket = io();
+  var form = document.getElementById('form');
+  var input = document.getElementById('input');
+  var messages = document.getElementById('messages');
+  var redBtn = document.getElementById('red');
+  var blueBtn = document.getElementById('blue');
+  var playas = document.getElementById('playas');
+
+  fetch('http://localhost:3000/chathistory')
+    .then((res) => res.json())
+    .then((data) => {
+      data.forEach((msg) => {
+        var item = document.createElement('li');
+        item.textContent = msg;
+        messages.append(item);
+      })
+    })
+
+  var loggedInUser = null;
+
+  function loggedIn() {
+    document.getElementById('send').disabled = false;
+    playas.innerHTML = `Playing as ${loggedInUser}`;
+  }
+
+  redBtn.addEventListener('click', function() {
+    socket.emit('red:joinbattleship');
+    loggedInUser = 'red';
+    loggedIn();
+  });
+
+  blueBtn.addEventListener('click', function() {
+    socket.emit('blue:joinbattleship');
+    loggedInUser = 'blue';
+    loggedIn();
+  });
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    if (input.value) {
+
+      socket.emit(`${loggedInUser}:chatmessage`, input.value);
+      input.value = '';
+    }
+  });
+
+  socket.on('chatmessage', function(msg) {
+    var item = document.createElement('li');
+    item.textContent = msg;
+    messages.append(item);
+    messages.scrollTop = messages.scrollTopMax;
+  })
+</script>
+</html>
